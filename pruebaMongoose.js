@@ -1,53 +1,64 @@
 var mongoose = require('mongoose');
+var express = require('express');
+//var application_root = __dirname;
+//var path = require('path');
 
 var userSchema = mongoose.Schema({
-  name: String
+  name: {type: String, required: true},
+  password: {type: String, required: true}
 });
 
-var User = mongoose.model('User', userSchema);
+var UserModel = mongoose.model('User', userSchema);
+
+var app = express.createServer();
+
+app.configure(function(){
+  app.use(express.methodOverride());
+  app.use(express.bodyParser());
+  app.use(app.router);
+});
 
 mongoose.connect('mongodb://localhost:27017/pruebamongoose');
 
-var user1 = new User({name:'david2'});
-var user2 = new User({name:'pepe2'});
-var user3 = new User({name:'juan2'});
-
-user1.save(function (err, user) {
-  if (err){} // TODO handle the error
-});
-
-user2.save(function (err, user) {
-  if (err){} // TODO handle the error
-});
-
-user3.save(function (err, user) {
-  if (err){} // TODO handle the error
-});
-
-User.find(function (err, users) {
+app.get('/users', function(req, res){
+  'use strict';
+  UserModel.find(function (err, users) {
   if (err) {} // TODO handle err
-  console.log(users);
-});
-/*
-var kittySchema = mongoose.Schema({
-    name: String
+  res.send(users);
+  });
 });
 
-var Kitten = mongoose.model('Kitten', kittySchema);
+app.get('/users/:id_user', function(req, res){
+  'use strict';
+  var id = req.param('id_user', null);
+  UserModel.findById(id, function(err, user){
+      res.send(user);
+  });
+});
 
-var silence = new Kitten({ name: 'Silence' });
-console.log(silence.name);
-
-mongoose.connect('mongodb://localhost:27017');
-
-var fluffy = new Kitten({ name: 'fluffy' });
-
-fluffy.save(function (err, fluffy) {
+app.post('/users', function(req, res){
+  'use strict';
+  console.log('body: ' + req.body);
+  var user = new UserModel({
+    name: req.body.name,
+    password: req.body.password
+  });
+  user.save(function (err, user) {
   if (err){} // TODO handle the error
+  res.send(user);
+  });
 });
 
-Kitten.find(function (err, kittens) {
-  if (err){} // TODO handle err
-  console.log(kittens);
+app.delete('/users/:id_user', function(req, res){
+  'use strict';
+  var id = req.param('id_user', null);
+  UserModel.findById(id, function(err, user){
+      user.remove(function(err){
+        if (err){}
+        console.log('removed');
+        res.send(200);
+      });
+  });
 });
-*/
+
+app.listen(4242);
